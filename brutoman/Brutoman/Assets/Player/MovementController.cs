@@ -9,6 +9,7 @@ public class MovementController : MonoBehaviour
     [Space]
 
     [Header("Realtime initialization")]
+    [SerializeField] public Animator PlayerAnimator;
     [SerializeField] public Transform CameraTransform;
     [SerializeField] public float CameraMinY = 0.1f;
     [SerializeField] public float CameraMaxY = 3.5f;
@@ -16,6 +17,14 @@ public class MovementController : MonoBehaviour
     [SerializeField] public float CameraVerticalSpeed = 3.0F;
     [SerializeField] public float MoveSpeed = 4.0f;
     [Space]
+
+    private float mouseXAxis =0.0f;
+    private float mouseYAxis = 0.0f;
+    private bool wPressed = false;
+    private bool aPressed = false;
+    private bool sPressed = false;
+    private bool dPressed = false;
+    private bool attackMouseDown = false;
 
     private Vector3 offsetX;
     private Vector3 offsetY;
@@ -26,15 +35,19 @@ public class MovementController : MonoBehaviour
         offsetY = new Vector3(0, 0, CameraDistance);
     }
 
-    // Update is called once per frame
     void Update()
     {
+        HandleUserInput();
+
+
         // Orient Camera to Player transform
-        offsetX = Quaternion.AngleAxis(Input.GetAxis("Mouse X") * CameraHorizontalSpeed, Vector3.up) * offsetX;
-        offsetY = Quaternion.AngleAxis(Input.GetAxis("Mouse Y") * CameraVerticalSpeed, Vector3.right) * offsetY;
+        var inputMouseX = Input.GetAxis("Mouse X");
+        var inputMouseY = Input.GetAxis("Mouse Y");
+        offsetX = Quaternion.AngleAxis(inputMouseX * CameraHorizontalSpeed, Vector3.up) * offsetX;
+        offsetY = Quaternion.AngleAxis(inputMouseY * CameraVerticalSpeed, Vector3.right) * offsetY;
         var limitedY = Mathf.Clamp(offsetY.y, CameraMinY, CameraMaxY);
         CameraTransform.position = transform.position + offsetX + new Vector3(0.0f, limitedY, 0.0f);
-        CameraTransform.LookAt(transform.position);
+        CameraTransform.LookAt(transform.position + new Vector3(0, 1.8f, 0));
 
         // Rotate Player in the same direction as Camera
         var rot = Quaternion.LookRotation(new Vector3(CameraTransform.forward.x, 0.0f, CameraTransform.forward.z), Vector3.up);
@@ -45,6 +58,34 @@ public class MovementController : MonoBehaviour
         var aPressed = Input.GetKey(KeyCode.A);
         var sPressed = Input.GetKey(KeyCode.S);
         var dPressed = Input.GetKey(KeyCode.D);
+
+        if (!wPressed && !sPressed)
+        {
+            PlayerAnimator.SetFloat("FrontBack", 0.0f);
+        }
+        if (wPressed)
+        {
+            PlayerAnimator.SetFloat("FrontBack", 1.0f);
+        }
+        else if (sPressed)
+        {
+            PlayerAnimator.SetFloat("FrontBack", -1.0f);
+        }
+
+        if (!aPressed && !dPressed)
+        {
+            PlayerAnimator.SetFloat("LeftRight", 0.0f);
+        }
+        if (aPressed)
+        {
+            PlayerAnimator.SetFloat("LeftRight", -1.0f);
+        }
+        else if (dPressed)
+        {
+            PlayerAnimator.SetFloat("LeftRight", 1.0f);
+        }
+
+        
 
         var posChanged = false;
         var moveSpeed = MoveSpeed * Time.deltaTime;
@@ -57,6 +98,12 @@ public class MovementController : MonoBehaviour
         // Handle forward and backward directions
         if (wPressed && !sPressed)
         {
+            if (Input.GetMouseButtonDown(0))
+            {
+                PlayerAnimator.CrossFade("Jump", 0.0f);
+                MoveSpeed = 8;
+            }
+
             diffPos = forwardDir.normalized * moveSpeed;
             posChanged = true;
         }
@@ -83,5 +130,17 @@ public class MovementController : MonoBehaviour
         {
             transform.position += diffPos;
         }
+    }
+
+    private void HandleUserInput()
+    {
+        // Get user input
+        var mouseXAxis = Input.GetAxis("Mouse X");
+        var mouseYAxis = Input.GetAxis("Mouse Y");
+        var wPressed = Input.GetKey(KeyCode.W);
+        var aPressed = Input.GetKey(KeyCode.A);
+        var sPressed = Input.GetKey(KeyCode.S);
+        var dPressed = Input.GetKey(KeyCode.D);
+        var attackMouseDown = Input.GetMouseButtonDown(0);
     }
 }
